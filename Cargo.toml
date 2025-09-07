@@ -1,6 +1,6 @@
 [package]
 name = "maccleanup-rust"
-version = "1.0.0"
+version = "1.3.0"
 edition = "2021"
 authors = ["Gappa"]
 description = "🧹 Mac Cleanup Tool (Rust Edition) - Clean your Mac system efficiently"
