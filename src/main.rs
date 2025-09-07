@@ -296,6 +296,30 @@ fn main() {
         total_stats.add(&clean_python_cache(&ctx));
     }
 
+    // App Containers
+    println!("\n{}", "📱 App Containers".bold());
+    println!("{}", "─".repeat(40).dimmed());
+    let containers_size = estimate_containers_size();
+    ctx.log_info(&format!("App containers data: {}", format_size(containers_size, BINARY).red()));
+    show_space_preview(containers_size);
+    
+    if containers_size > 0 && ctx.should_proceed("Clean app containers data?",
+        Some(format!("This will free approximately {}", format_size(containers_size, BINARY)))) {
+        total_stats.add(&clean_containers(&ctx));
+    }
+
+    // Browser Cookies & Web Data
+    println!("\n{}", "🍪 Browser Cookies & Web Data".bold());
+    println!("{}", "─".repeat(40).dimmed());
+    let cookies_size = estimate_cookies_size();
+    ctx.log_info(&format!("Cookies & web data: {}", format_size(cookies_size, BINARY).red()));
+    show_space_preview(cookies_size);
+    
+    if cookies_size > 0 && ctx.should_proceed("Clean browser cookies and web data?",
+        Some(format!("This will free approximately {}", format_size(cookies_size, BINARY)))) {
+        total_stats.add(&clean_cookies(&ctx));
+    }
+
     // RAM Cleanup
     println!("\n{}", "🧠 RAM Memory".bold());
     println!("{}", "─".repeat(40).dimmed());
@@ -715,6 +739,38 @@ fn estimate_python_cache_size() -> u64 {
     total
 }
 
+fn estimate_containers_size() -> u64 {
+    let home = env::var("HOME").unwrap_or_default();
+    let containers_path = format!("{}/Library/Containers", home);
+    
+    if Path::new(&containers_path).exists() {
+        get_directory_size(&containers_path)
+    } else {
+        0
+    }
+}
+
+fn estimate_cookies_size() -> u64 {
+    let home = env::var("HOME").unwrap_or_default();
+    let paths = vec![
+        format!("{}/Library/Cookies", home),
+        format!("{}/Library/HTTPStorages", home),
+        format!("{}/Library/WebKit", home),
+        format!("{}/Library/Safari/LocalStorage", home),
+        format!("{}/Library/Safari/Databases", home),
+        format!("{}/Library/Application Support/Google/Chrome/Default/Cookies", home),
+        format!("{}/Library/Application Support/Google/Chrome/Default/Local Storage", home),
+    ];
+    
+    let mut total_size = 0u64;
+    for path in paths {
+        if Path::new(&path).exists() {
+            total_size += get_directory_size(&path);
+        }
+    }
+    total_size
+}
+
 fn show_menu() -> bool {
     println!("\n{}", "This tool will clean the following:".bold());
     println!("  • System and user caches");
@@ -728,6 +784,8 @@ fn show_menu() -> bool {
     println!("  • Safari cache and history");
     println!("  • Chrome browser cache");
     println!("  • Python cache files (__pycache__, .pyc)");
+    println!("  • App containers data");
+    println!("  • Browser cookies and web data");
     println!("  • RAM inactive memory");
     
     print!("\n{} {} ", "?".cyan(), "Continue with cleanup? (y/N):".yellow().bold());
@@ -744,6 +802,8 @@ fn estimate_cache_size() -> u64 {
     let cache_paths = vec![
         format!("{}/Library/Caches", home),
         format!("{}/.cache", home),
+        "/Library/Caches".to_string(),
+        "/System/Library/Caches".to_string(),
     ];
     
     let mut total = 0;
@@ -759,6 +819,8 @@ fn estimate_logs_size() -> u64 {
     let home = env::var("HOME").unwrap_or_else(|_| String::from("/"));
     let log_paths = vec![
         format!("{}/Library/Logs", home),
+        "/Library/Logs".to_string(),
+        "/var/log".to_string(),
     ];
     
     let mut total = 0;
@@ -826,12 +888,16 @@ fn clean_caches(ctx: &CleanupContext) -> CleanupStats {
     let cache_paths = vec![
         format!("{}/Library/Caches", home),
         format!("{}/.cache", home),
+        "/Library/Caches".to_string(),
+        "/System/Library/Caches".to_string(),
     ];
 
     for path in cache_paths {
         if Path::new(&path).exists() {
             ctx.log_action(&format!("Cleaning {}", path));
-            stats.add(&clean_directory(&path, Some(30), ctx));
+            // Use longer retention for system caches for safety
+            let retention_days = if path.starts_with("/System") || path.starts_with("/Library") { 7 } else { 1 };
+            stats.add(&clean_directory(&path, Some(retention_days), ctx));
         }
     }
 
@@ -848,6 +914,8 @@ fn clean_logs(ctx: &CleanupContext) -> CleanupStats {
     let log_paths = vec![
         format!("{}/Library/Logs", home),
         format!("{}/.npm/_logs", home),
+        "/Library/Logs".to_string(),
+        "/var/log".to_string(),
     ];
 
     for path in log_paths {
@@ -1284,6 +1352,47 @@ fn clean_python_cache(ctx: &CleanupContext) -> CleanupStats {
         stats.files_removed, 
         format_size(stats.space_freed, BINARY)));
     stats
+}
+
+fn clean_containers(ctx: &CleanupContext) -> CleanupStats {
+    let home = env::var("HOME").unwrap_or_default();
+    let containers_path = format!("{}/Library/Containers", home);
+    
+    if !Path::new(&containers_path).exists() {
+        return CleanupStats::new();
+    }
+    
+    ctx.log_action("Cleaning app containers...");
+    clean_directory(&containers_path, Some(7), ctx) // Clean containers older than 7 days
+}
+
+fn clean_cookies(ctx: &CleanupContext) -> CleanupStats {
+    let home = env::var("HOME").unwrap_or_default();
+    let paths = vec![
+        format!("{}/Library/Cookies", home),
+        format!("{}/Library/HTTPStorages", home),
+        format!("{}/Library/WebKit", home),
+        format!("{}/Library/Safari/LocalStorage", home),
+        format!("{}/Library/Safari/Databases", home),
+        format!("{}/Library/Application Support/Google/Chrome/Default/Cookies", home),
+        format!("{}/Library/Application Support/Google/Chrome/Default/Local Storage", home),
+    ];
+    
+    ctx.log_action("Cleaning browser cookies and web data...");
+    let mut total_stats = CleanupStats::new();
+    
+    for path in paths {
+        if Path::new(&path).exists() {
+            let stats = clean_directory(&path, Some(0), ctx); // Clean all cookies/web data
+            total_stats.add(&stats);
+        }
+    }
+    
+    ctx.log_success(&format!("Cleaned {} cookie/web data files, freed {}", 
+        total_stats.files_removed, 
+        format_size(total_stats.space_freed, BINARY)));
+    
+    total_stats
 }
 
 fn find_python_cache_size(path: &str, depth: usize, max_depth: usize) -> u64 {
