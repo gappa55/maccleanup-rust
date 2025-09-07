@@ -20,7 +20,7 @@ A fast and safe macOS system cleanup utility written in Rust that helps you free
 
 ```bash
 # Download and install binary
-curl -L https://github.com/gappa55/maccleanup-rust/releases/download/v1.2.0/maccleanup-rust -o maccleanup-rust
+curl -L https://github.com/gappa55/maccleanup-rust/releases/download/v1.3.0/maccleanup-rust -o maccleanup-rust
 chmod +x maccleanup-rust
 mkdir -p ~/.local/bin
 mv maccleanup-rust ~/.local/bin/
