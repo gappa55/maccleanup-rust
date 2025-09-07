@@ -296,18 +296,6 @@ fn main() {
         total_stats.add(&clean_python_cache(&ctx));
     }
 
-    // App Containers
-    println!("\n{}", "📱 App Containers".bold());
-    println!("{}", "─".repeat(40).dimmed());
-    let containers_size = estimate_containers_size();
-    ctx.log_info(&format!("App containers data: {}", format_size(containers_size, BINARY).red()));
-    show_space_preview(containers_size);
-    
-    if containers_size > 0 && ctx.should_proceed("Clean app containers data?",
-        Some(format!("This will free approximately {}", format_size(containers_size, BINARY)))) {
-        total_stats.add(&clean_containers(&ctx));
-    }
-
     // Browser Cookies & Web Data
     println!("\n{}", "🍪 Browser Cookies & Web Data".bold());
     println!("{}", "─".repeat(40).dimmed());
@@ -739,17 +727,6 @@ fn estimate_python_cache_size() -> u64 {
     total
 }
 
-fn estimate_containers_size() -> u64 {
-    let home = env::var("HOME").unwrap_or_default();
-    let containers_path = format!("{}/Library/Containers", home);
-    
-    if Path::new(&containers_path).exists() {
-        get_directory_size(&containers_path)
-    } else {
-        0
-    }
-}
-
 fn estimate_cookies_size() -> u64 {
     let home = env::var("HOME").unwrap_or_default();
     let paths = vec![
@@ -784,7 +761,6 @@ fn show_menu() -> bool {
     println!("  • Safari cache and history");
     println!("  • Chrome browser cache");
     println!("  • Python cache files (__pycache__, .pyc)");
-    println!("  • App containers data");
     println!("  • Browser cookies and web data");
     println!("  • RAM inactive memory");
     
@@ -1352,18 +1328,6 @@ fn clean_python_cache(ctx: &CleanupContext) -> CleanupStats {
         stats.files_removed, 
         format_size(stats.space_freed, BINARY)));
     stats
-}
-
-fn clean_containers(ctx: &CleanupContext) -> CleanupStats {
-    let home = env::var("HOME").unwrap_or_default();
-    let containers_path = format!("{}/Library/Containers", home);
-    
-    if !Path::new(&containers_path).exists() {
-        return CleanupStats::new();
-    }
-    
-    ctx.log_action("Cleaning app containers...");
-    clean_directory(&containers_path, Some(7), ctx) // Clean containers older than 7 days
 }
 
 fn clean_cookies(ctx: &CleanupContext) -> CleanupStats {
