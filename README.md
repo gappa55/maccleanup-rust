@@ -38,16 +38,20 @@ cd maccleanup-rust
 
 # Build and install
 cargo build --release
-sudo cp target/release/maccleanup-rust /usr/local/bin/
+mkdir -p ~/.local/bin
+cp target/release/maccleanup-rust ~/.local/bin/
 ```
 
 ### Option 3: Direct Download
 
 ```bash
-# Download and install binary (replace URL with actual release)
+# Download and install binary
 curl -L https://github.com/gappa55/maccleanup-rust/releases/download/v1.0.0/maccleanup-rust -o maccleanup-rust
 chmod +x maccleanup-rust
-sudo mv maccleanup-rust /usr/local/bin/
+mkdir -p ~/.local/bin
+mv maccleanup-rust ~/.local/bin/
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
 ```
 
 ## Usage
