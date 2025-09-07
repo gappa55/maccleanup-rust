@@ -15,6 +15,9 @@ cargo build
 # Build in release mode
 cargo build --release
 
+# Build universal binary (Intel + Apple Silicon)
+./build-universal.sh
+
 # Run the application
 cargo run
 

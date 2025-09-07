@@ -21,3 +21,6 @@ humansize = "2.1"
 [[bin]]
 name = "maccleanup-rust"
 path = "src/main.rs"
+
+[package.metadata.cargo-universal]
+output = "target/universal/maccleanup-rust"
