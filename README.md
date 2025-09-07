@@ -16,33 +16,7 @@ A fast and safe macOS system cleanup utility written in Rust that helps you free
 
 ## Installation
 
-### Option 1: Homebrew (Recommended)
-
-```bash
-# Add tap (once repository is published)
-brew tap gappa55/tap
-
-# Install
-brew install mac-cleanup
-
-# Or install directly from formula
-brew install https://raw.githubusercontent.com/gappa55/maccleanup-rust/main/mac-cleanup.rb
-```
-
-### Option 2: Build from Source
-
-```bash
-# Clone repository
-git clone https://github.com/gappa55/maccleanup-rust.git
-cd maccleanup-rust
-
-# Build and install
-cargo build --release
-mkdir -p ~/.local/bin
-cp target/release/maccleanup-rust ~/.local/bin/
-```
-
-### Option 3: Direct Download
+### Option 1: Direct Download (Recommended)
 
 ```bash
 # Download and install binary
@@ -52,6 +26,21 @@ mkdir -p ~/.local/bin
 mv maccleanup-rust ~/.local/bin/
 echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
 source ~/.zshrc
+```
+
+### Option 2: Build from Source
+
+```bash
+# Clone repository
+git clone https://github.com/gappa55/maccleanup-rust.git
+cd maccleanup-rust
+
+# Build universal binary
+./build-universal.sh
+
+# Install
+mkdir -p ~/.local/bin
+cp target/universal/maccleanup-rust ~/.local/bin/
 ```
 
 ## Usage
